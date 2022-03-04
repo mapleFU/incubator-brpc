@@ -145,7 +145,8 @@ public:
     // Get instance of Op.
     const Op& op() const { return _combiner.op(); }
     const InvOp& inv_op() const { return _inv_op; }
-    
+
+    //! 不太懂, 感觉就是 sample.
     sampler_type* get_sampler() {
         if (NULL == _sampler) {
             _sampler = new sampler_type(this);
@@ -181,6 +182,7 @@ protected:
     }
 
 private:
+    //! 最关键的 `_combiner` 应该是负责实际逻辑的地方.
     combiner_type   _combiner;
     sampler_type* _sampler;
     SeriesSampler* _series_sampler;

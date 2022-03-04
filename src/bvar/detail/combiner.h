@@ -95,6 +95,7 @@ public:
         call_op_returning_void(op, _value, value2);
     }
 
+    // 把操作合并到 GlobalValue 中.
     // [Unique]
     template <typename Op, typename GlobalValue>
     void merge_global(const Op &op, GlobalValue & global_value) {
@@ -208,6 +209,7 @@ friend class GlobalValue<self_type>;
             element.merge_global(op, g);
         }
 
+        //! AgentCombiner 的 instance.
         self_type *combiner;
         ElementContainer<ElementTp> element;
     };
@@ -235,7 +237,10 @@ friend class GlobalValue<self_type>;
     // [Threadsafe] May be called from anywhere
     ResultTp combine_agents() const {
         ElementTp tls_value;
+        // 访问全局链表，merge 记录.
         butil::AutoLock guard(_lock);
+        // 不停处理到 op 上.
+        // Q: 为什么这个时候不清这里的 counter? 不过也没区别.
         ResultTp ret = _global_result;
         for (butil::LinkNode<Agent>* node = _agents.head();
              node != _agents.end(); node = node->next()) {
@@ -290,6 +295,7 @@ friend class GlobalValue<self_type>;
     }
 
     // We need this function to be as fast as possible.
+    // 这里读 agent, 创建 tls 对象, 然后 push_back 到 _agents 列表(O(1)).
     inline Agent* get_or_create_tls_agent() {
         Agent* agent = AgentGroup::get_tls_agent(_id);
         if (!agent) {
@@ -300,6 +306,7 @@ friend class GlobalValue<self_type>;
                 return NULL;
             }
         }
+        // 已经初始化.(靠有没有 combiner 初始化).
         if (agent->combiner) {
             return agent;
         }
@@ -331,6 +338,7 @@ friend class GlobalValue<self_type>;
     bool valid() const { return _id >= 0; }
 
 private:
+    //! 这应该是一个 mock agent, 保证只在一个线程使用
     AgentId                                     _id;
     BinaryOp                                    _op;
     mutable butil::Lock                          _lock;

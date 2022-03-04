@@ -38,6 +38,7 @@
 
 namespace brpc {
 
+// 默认是 10秒?
 const int64_t SPAN_DELETE_INTERVAL_US = 10000000L/*10s*/;
 
 DEFINE_string(rpcz_database_dir, "./rpc_data/rpcz",

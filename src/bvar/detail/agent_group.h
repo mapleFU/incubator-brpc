@@ -79,6 +79,8 @@ public:
     // makes alignment of ThreadBlock harder and to address the agent we have
     // to touch an additional cacheline: the bitmap. Whereas in the first
     // method, bitmap and ThreadBlock* are in one cacheline.
+    //
+    // 将 agent 存放在各个 block 中.
     struct BAIDU_CACHELINE_ALIGNMENT ThreadBlock {
         inline Agent* at(size_t offset) { return _agents + offset; };
         
@@ -111,6 +113,8 @@ public:
 
     // Note: May return non-null for unexist id, see notes on ThreadBlock
     // We need this function to be as fast as possible.
+    //
+    // 不存在就返回 null.
     inline static Agent* get_tls_agent(AgentId id) {
         if (__builtin_expect(id >= 0, 1)) {
             if (_s_tls_blocks) {
@@ -126,7 +130,8 @@ public:
         return NULL;
     }
 
-    // Note: May return non-null for unexist id, see notes on ThreadBlock
+    // Note: May return non-null for unexist id, see notes on ThreadBlock.
+    // TODO(mwish): 感觉这个要求知道调用的线程? 然后要求不能切走? 有点 hacking 啊.
     inline static Agent* get_or_create_tls_agent(AgentId id) {
         if (__builtin_expect(id < 0, 0)) {
             CHECK(false) << "Invalid id=" << id;
@@ -138,6 +143,7 @@ public:
                 LOG(FATAL) << "Fail to create vector, " << berror();
                 return NULL;
             }
+            // 注册 thread 结束的时候的内容.
             butil::thread_atexit(_destroy_tls_blocks);
         }
         const size_t block_id = (size_t)id / ELEMENTS_PER_BLOCK; 
@@ -182,6 +188,7 @@ private:
     static pthread_mutex_t                      _s_mutex;
     static AgentId                              _s_agent_kinds;
     static std::deque<AgentId>                  *_s_free_ids;
+    // 对应的线程 block?
     static __thread std::vector<ThreadBlock *>  *_s_tls_blocks;
 };
 
@@ -194,6 +201,7 @@ std::deque<AgentId>* AgentGroup<Agent>::_s_free_ids = NULL;
 template <typename Agent>
 AgentId AgentGroup<Agent>::_s_agent_kinds = 0;
 
+//! tls_blocks 是全局的. 每个类型会初始化一次. 而且是 perthread 的.
 template <typename Agent>
 __thread std::vector<typename AgentGroup<Agent>::ThreadBlock *>
 *AgentGroup<Agent>::_s_tls_blocks = NULL;
